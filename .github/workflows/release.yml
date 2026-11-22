@@ -56,7 +56,12 @@ jobs:
           npm install --no-save bun@1.4.5
           BUN="$PWD/node_modules/.bin/bun" npm run compile --workspace @mopux/cli
       - name: Publish with trusted publishing (staged until a maintainer approves it on npm)
-        run: npm publish --workspace "${{ needs.prepare.outputs.package }}" --access public --provenance
+        run: |
+          if npm view "${{ needs.prepare.outputs.package }}@${{ needs.prepare.outputs.version }}" version >/dev/null 2>&1; then
+            echo "${{ needs.prepare.outputs.package }}@${{ needs.prepare.outputs.version }} is already on npm: skipping publish."
+          else
+            npm publish --workspace "${{ needs.prepare.outputs.package }}" --access public --provenance
+          fi
       - name: GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
