@@ -18,7 +18,7 @@ npm run lint
 npm run build
 ```
 
-Releases are published to npm from GitHub Actions when a `v*` tag is pushed.
+Releases: bump the version in `packages/sdk/package.json` and `packages/sdk/src/version.ts`, update the changelog and push a `vX.Y.Z` tag. GitHub Actions runs the checks and stages the version on npm through trusted publishing (no tokens); a maintainer approves it on npmjs.com with 2FA before it becomes public.
 
 ## Security
 
