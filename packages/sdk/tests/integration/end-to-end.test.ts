@@ -43,7 +43,12 @@ describe.skipIf(!configured)('integration', () => {
       await mopux.tasks.my();
       await mopux.tasks.focus();
       await mopux.tasks.markdownHelp();
-      await mopux.auth.tokens.list();
+      // auth/tokens arrived in API 1.2.
+      await mopux.auth.tokens.list().catch((error: unknown) => {
+        if (!(error instanceof NotFoundError)) {
+          throw error;
+        }
+      });
       await mopux.notifications.list({ perPage: 5 });
       await mopux.notifications.unreadCount();
 
@@ -59,7 +64,7 @@ describe.skipIf(!configured)('integration', () => {
       expect((await mopux.projects.members(id)).some((member) => member.id === me.id)).toBe(true);
 
       const group = await mopux.taskGroups.create(id, 'Backlog', [{ title: 'First task' }, { title: 'Second task' }]);
-      expect(group.status).toBe(0);
+      expect(Number(group.status)).toBe(0); // API 1.1 answered false here
       expect(group.tasks).toHaveLength(2);
 
       let task = await mopux.tasks.create({
@@ -92,7 +97,7 @@ describe.skipIf(!configured)('integration', () => {
       const board = await mopux.projects.board(id);
       expect(board.task_groups?.length).toBeGreaterThan(0);
       const summary = await mopux.taskGroups.statusSummary(id, group.id as number);
-      expect(summary.summary?.delayed).toBeTypeOf('number');
+      expect(summary.summary?.total).toBeTypeOf('number');
       await mopux.taskGroups.focus(id, group.id as number);
       await mopux.projects.summary(id);
       await mopux.projects.activity(id, { perPage: 10 });
@@ -108,7 +113,7 @@ describe.skipIf(!configured)('integration', () => {
       const reply = await mopux.comments.reply(comment.id as number, 'A reply');
       await mopux.comments.update(comment.id as number, 'Hello from mopux-js (edited)');
       const comments = await mopux.comments.list(task.id as number);
-      expect(comments.total).toBeGreaterThanOrEqual(2);
+      expect(comments.items.length).toBeGreaterThanOrEqual(2);
 
       if (env.MOPUX_INTEGRATION_UPLOADS === '1') {
         await mopux.comments.create(task.id as number, {
