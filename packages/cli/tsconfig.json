@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true,
+    "paths": {
+      "@mopux/sdk": ["../sdk/src/index.ts"],
+      "@mopux/sdk/testing": ["../sdk/src/testing/index.ts"]
+    }
+  },
+  "include": ["src", "tests", "tsup.config.ts", "vitest.config.ts"]
+}

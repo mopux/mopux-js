@@ -1,14 +1,38 @@
 name: release
 
+# sdk-vX.Y.Z publishes @mopux/sdk; cli-vX.Y.Z publishes @mopux/cli and attaches the executables.
 on:
   push:
-    tags: ['v*']
+    tags: ['sdk-v*', 'cli-v*']
 
 permissions:
   contents: read
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      package: ${{ steps.package.outputs.package }}
+      dir: ${{ steps.package.outputs.dir }}
+      version: ${{ steps.package.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: package
+        name: Package and version from the tag
+        run: |
+          case "${GITHUB_REF_NAME}" in
+            sdk-v*) package="@mopux/sdk"; dir="packages/sdk" ;;
+            cli-v*) package="@mopux/cli"; dir="packages/cli" ;;
+            *) echo "Unexpected tag ${GITHUB_REF_NAME}"; exit 1 ;;
+          esac
+          version="$(node -p "require('./${dir}/package.json').version")"
+          test "${GITHUB_REF_NAME#*-v}" = "${version}" || { echo "Tag ${GITHUB_REF_NAME} does not match ${package} ${version}"; exit 1; }
+          echo "package=${package}" >> "$GITHUB_OUTPUT"
+          echo "dir=${dir}" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
   publish:
+    needs: prepare
     runs-on: ubuntu-latest
     environment: npm
     permissions:
@@ -21,18 +45,26 @@ jobs:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
           cache: npm
-      - name: Tag matches the package version
-        run: |
-          version="$(node -p "require('./packages/sdk/package.json').version")"
-          test "v${version}" = "${GITHUB_REF_NAME}" || { echo "Tag ${GITHUB_REF_NAME} does not match @mopux/sdk ${version}"; exit 1; }
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      - name: Publish with trusted publishing (OIDC, no token)
-        run: npm publish --workspace @mopux/sdk --access public --provenance
+      - name: Executables
+        if: needs.prepare.outputs.package == '@mopux/cli'
+        run: |
+          npm install --no-save bun@1.4.5
+          BUN="$PWD/node_modules/.bin/bun" npm run compile --workspace @mopux/cli
+      - name: Publish with trusted publishing (staged until a maintainer approves it on npm)
+        run: npm publish --workspace "${{ needs.prepare.outputs.package }}" --access public --provenance
       - name: GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --notes "See packages/sdk/CHANGELOG.md."
+        run: |
+          files=()
+          if [ "${{ needs.prepare.outputs.package }}" = "@mopux/cli" ]; then
+            files=(packages/cli/dist-bin/*)
+          fi
+          gh release create "${GITHUB_REF_NAME}" "${files[@]}" \
+            --title "${{ needs.prepare.outputs.package }} ${{ needs.prepare.outputs.version }}" \
+            --notes "See ${{ needs.prepare.outputs.dir }}/CHANGELOG.md. The npm version is staged until it is approved on npmjs.com."
