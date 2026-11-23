@@ -11,7 +11,7 @@ Official TypeScript client for the [Mopux](https://www.mopux.com) API (`/api/v1`
 ## Requirements
 
 - Node.js 24 or 26. Only Node versions that still receive security fixes are supported.
-- Server side only for now: do not ship an API token to a browser.
+- Use the API client server-side and keep API tokens on the server. The webhook entry point supports additional runtimes.
 
 ## Installation
 
@@ -226,3 +226,95 @@ npm run sync-spec   # copy the public spec from mopux-com and regenerate the typ
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## Recibir webhooks
+
+`parseWebhookEvent(rawBody, headers, secret)` verifica la firma antes de leer el JSON. Pásale los bytes originales de la petición y el secreto del endpoint. Admite `Uint8Array` (incluido `Buffer`), `ArrayBuffer` o texto UTF-8 sin modificar. Rechaza firmas inválidas con `InvalidWebhookSignatureError` y sobres inválidos con `InvalidWebhookPayloadError`.
+
+`verifyWebhookSignature(rawBody, signatureHeader, secret, { tolerance, now })` permite verificar solo la firma. Ambas opciones se expresan en segundos y son opcionales. La tolerancia por defecto admite un desfase de hasta 300 segundos hacia el pasado o el futuro.
+
+El resultado conserva `data` y la marca UTC original en `occurredAt`. Usa `event.is(WebhookEventType.TaskUpdated)` para obtener el tipo OpenAPI de `event.data`, o los accesores `task()`, `changes()`, `previousStatus()`, `assignedUserIds()`, `previousProjectId()` y `previousGroupId()`. Para una tarea borrada, `task()` devuelve `null` y la referencia reducida sigue disponible en `data.task`. Los eventos desconocidos conservan su nombre y sus datos. `deliveryId` identifica la entrega y se mantiene en los reintentos. El `id` del evento se conserva también en los reenvíos manuales.
+
+La entrada `@mopux/sdk/webhooks` funciona con Node.js 18+ y en entornos con Web Crypto, como navegadores en contextos seguros y runtimes edge. Guarda el secreto en el servidor.
+
+### Express
+
+Registra esta ruta antes de cualquier middleware global que lea el cuerpo, como `express.json()`.
+
+```ts
+import express from 'express';
+import {
+  InvalidWebhookPayloadError,
+  InvalidWebhookSignatureError,
+  parseWebhookEvent,
+} from '@mopux/sdk/webhooks';
+
+const app = express();
+const secret = process.env.MOPUX_WEBHOOK_SECRET;
+if (!secret) throw new Error('Falta MOPUX_WEBHOOK_SECRET');
+
+app.post('/webhooks/mopux', express.raw({ type: 'application/json', inflate: false }), async (req, res, next) => {
+  try {
+    const event = await parseWebhookEvent(req.body, req.headersDistinct, secret);
+    console.log(event.id, event.event);
+    res.sendStatus(204);
+  } catch (error) {
+    if (error instanceof InvalidWebhookSignatureError) return res.sendStatus(401);
+    if (error instanceof InvalidWebhookPayloadError) return res.sendStatus(400);
+    next(error);
+  }
+});
+```
+
+### Next.js (Route Handler)
+
+```ts
+// app/api/webhooks/mopux/route.ts
+import {
+  InvalidWebhookPayloadError,
+  InvalidWebhookSignatureError,
+  parseWebhookEvent,
+} from '@mopux/sdk/webhooks';
+
+export const runtime = 'edge';
+
+export async function POST(request: Request) {
+  const secret = process.env.MOPUX_WEBHOOK_SECRET;
+  if (!secret) throw new Error('Falta MOPUX_WEBHOOK_SECRET');
+
+  try {
+    const event = await parseWebhookEvent(await request.arrayBuffer(), request.headers, secret);
+    console.log(event.id, event.event);
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    if (error instanceof InvalidWebhookSignatureError) return new Response(null, { status: 401 });
+    if (error instanceof InvalidWebhookPayloadError) return new Response(null, { status: 400 });
+    throw error;
+  }
+}
+```
+
+### Cloudflare Workers
+
+```ts
+import {
+  InvalidWebhookPayloadError,
+  InvalidWebhookSignatureError,
+  parseWebhookEvent,
+} from '@mopux/sdk/webhooks';
+
+export default {
+  async fetch(request: Request, env: { MOPUX_WEBHOOK_SECRET: string }) {
+    if (request.method !== 'POST') return new Response(null, { status: 405 });
+    try {
+      const event = await parseWebhookEvent(await request.arrayBuffer(), request.headers, env.MOPUX_WEBHOOK_SECRET);
+      console.log(event.id, event.event);
+      return new Response(null, { status: 204 });
+    } catch (error) {
+      if (error instanceof InvalidWebhookSignatureError) return new Response(null, { status: 401 });
+      if (error instanceof InvalidWebhookPayloadError) return new Response(null, { status: 400 });
+      throw error;
+    }
+  },
+};
+```

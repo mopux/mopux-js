@@ -191,3 +191,18 @@ function describe(cause: unknown): string {
   }
   return String(cause);
 }
+
+export class InvalidWebhookSignatureError extends MopuxError {
+  override name = 'InvalidWebhookSignatureError';
+}
+
+export class InvalidWebhookPayloadError extends MopuxError {
+  override name = 'InvalidWebhookPayloadError';
+
+  constructor(
+    readonly field: string,
+    reason: string,
+  ) {
+    super(`Invalid ${field}: ${reason}.`);
+  }
+}

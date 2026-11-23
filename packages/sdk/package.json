@@ -47,6 +47,26 @@
         "default": "./dist/testing.cjs"
       }
     },
+    "./webhooks": {
+      "node": {
+        "import": {
+          "types": "./dist/webhooks-node.d.ts",
+          "default": "./dist/webhooks-node.js"
+        },
+        "require": {
+          "types": "./dist/webhooks-node.d.cts",
+          "default": "./dist/webhooks-node.cjs"
+        }
+      },
+      "import": {
+        "types": "./dist/webhooks.d.ts",
+        "default": "./dist/webhooks.js"
+      },
+      "require": {
+        "types": "./dist/webhooks.d.cts",
+        "default": "./dist/webhooks.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "files": [

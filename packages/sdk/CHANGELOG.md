@@ -2,6 +2,11 @@
 
 All notable changes to `@mopux/sdk` are documented here. The project follows [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+- Added Web Crypto signature verification and typed parsing for incoming Mopux webhooks.
+- Synced OpenAPI 1.3.0, including webhook payloads and project activity updates.
+
 ## 0.1.0 - 2026-11-22
 
 First release.

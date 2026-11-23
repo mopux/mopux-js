@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mopux Public API v1
-  version: 1.2.0
+  version: 1.3.0
   license:
     name: Propietaria. Uso sujeto a las condiciones de Mopux
     url: https://mopux.com/es/legal/terms
@@ -37,6 +37,8 @@ security:
   - bearerAuth: []
 
 tags:
+  - name: Webhooks
+    description: 'Webhooks salientes: Mopux hace un POST firmado a tu URL cuando cambia una tarea. Solo en planes personalizados. Vectores de prueba de la firma en la documentación pública.'
   - name: Auth
     description: Login con email y contraseña, logout y usuario del token.
   - name: Projects
@@ -2788,6 +2790,144 @@ paths:
           $ref: '#/components/responses/Error404'
         '429': { $ref: '#/components/responses/Error429' }
 
+webhooks:
+  task.created:
+    post:
+      operationId: webhook_taskCreated
+      tags: [Webhooks]
+      summary: 'task.created'
+      description: 'Tarea creada. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.'
+      parameters:
+        - $ref: '#/components/parameters/WebhookEventHeader'
+        - $ref: '#/components/parameters/WebhookDeliveryHeader'
+        - $ref: '#/components/parameters/WebhookSignatureHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookTaskEvent' }
+      responses:
+        '2XX': { description: 'Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook.' }
+  task.status_changed:
+    post:
+      operationId: webhook_taskStatusChanged
+      tags: [Webhooks]
+      summary: 'task.status_changed'
+      description: 'Cambio de estado de una tarea; `data.previous_status` es el estado anterior. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.'
+      parameters:
+        - $ref: '#/components/parameters/WebhookEventHeader'
+        - $ref: '#/components/parameters/WebhookDeliveryHeader'
+        - $ref: '#/components/parameters/WebhookSignatureHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookTaskStatusEvent' }
+      responses:
+        '2XX': { description: 'Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook.' }
+  task.completed:
+    post:
+      operationId: webhook_taskCompleted
+      tags: [Webhooks]
+      summary: 'task.completed'
+      description: 'Tarea completada (pasa a estado 3). Se envía junto a `task.status_changed`. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.'
+      parameters:
+        - $ref: '#/components/parameters/WebhookEventHeader'
+        - $ref: '#/components/parameters/WebhookDeliveryHeader'
+        - $ref: '#/components/parameters/WebhookSignatureHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookTaskStatusEvent' }
+      responses:
+        '2XX': { description: 'Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook.' }
+  task.assigned:
+    post:
+      operationId: webhook_taskAssigned
+      tags: [Webhooks]
+      summary: 'task.assigned'
+      description: 'Se ha asignado la tarea a una o más personas; `data.assigned_user_ids` son las altas. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.'
+      parameters:
+        - $ref: '#/components/parameters/WebhookEventHeader'
+        - $ref: '#/components/parameters/WebhookDeliveryHeader'
+        - $ref: '#/components/parameters/WebhookSignatureHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookTaskAssignedEvent' }
+      responses:
+        '2XX': { description: 'Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook.' }
+  task.updated:
+    post:
+      operationId: webhook_taskUpdated
+      tags: [Webhooks]
+      summary: 'task.updated'
+      description: 'Cambio de título, descripción, prioridad, horas, fechas o etiquetas; `data.changes` lleva cada campo como `{old, new}`. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.'
+      parameters:
+        - $ref: '#/components/parameters/WebhookEventHeader'
+        - $ref: '#/components/parameters/WebhookDeliveryHeader'
+        - $ref: '#/components/parameters/WebhookSignatureHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookTaskUpdatedEvent' }
+      responses:
+        '2XX': { description: 'Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook.' }
+  task.moved:
+    post:
+      operationId: webhook_taskMoved
+      tags: [Webhooks]
+      summary: 'task.moved'
+      description: 'Tarea movida a otro grupo o proyecto. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.'
+      parameters:
+        - $ref: '#/components/parameters/WebhookEventHeader'
+        - $ref: '#/components/parameters/WebhookDeliveryHeader'
+        - $ref: '#/components/parameters/WebhookSignatureHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookTaskMovedEvent' }
+      responses:
+        '2XX': { description: 'Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook.' }
+  task.deleted:
+    post:
+      operationId: webhook_taskDeleted
+      tags: [Webhooks]
+      summary: 'task.deleted'
+      description: 'Tarea eliminada; `data.task` es la versión mínima con `deleted: true`. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.'
+      parameters:
+        - $ref: '#/components/parameters/WebhookEventHeader'
+        - $ref: '#/components/parameters/WebhookDeliveryHeader'
+        - $ref: '#/components/parameters/WebhookSignatureHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookTaskDeletedEvent' }
+      responses:
+        '2XX': { description: 'Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook.' }
+  ping:
+    post:
+      operationId: webhook_ping
+      tags: [Webhooks]
+      summary: 'ping'
+      description: 'Envío de prueba desde la página de webhooks. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.'
+      parameters:
+        - $ref: '#/components/parameters/WebhookEventHeader'
+        - $ref: '#/components/parameters/WebhookDeliveryHeader'
+        - $ref: '#/components/parameters/WebhookSignatureHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookPingEvent' }
+      responses:
+        '2XX': { description: 'Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook.' }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -2796,6 +2936,24 @@ components:
       bearerFormat: Token
 
   parameters:
+    WebhookEventHeader:
+      name: X-Mopux-Event
+      in: header
+      required: true
+      description: Nombre del evento, igual que `event` en el cuerpo.
+      schema: { type: string, examples: [task.completed] }
+    WebhookDeliveryHeader:
+      name: X-Mopux-Delivery
+      in: header
+      required: true
+      description: Identificador único de la entrega (uuid). Un reintento conserva el mismo; un reenvío manual usa uno nuevo pero conserva el `id` del evento. Úsalo para descartar duplicados.
+      schema: { type: string, format: uuid }
+    WebhookSignatureHeader:
+      name: X-Mopux-Signature
+      in: header
+      required: true
+      description: 't={unix},v1={hex}. v1 = HMAC-SHA256 con el secreto del webhook sobre "{t}.{cuerpo sin modificar}". Compara en tiempo constante y rechaza timestamps de más de 5 minutos.'
+      schema: { type: string, examples: ['t=1763900000,v1=0b2aac24a13ebe95fa4c7a1a936ce2173c38a146557a9538c4c1abc8b11af2df'] }
     taskId:
       in: path
       name: taskId
@@ -3003,6 +3161,129 @@ components:
         message: Comment created successfully.
 
   schemas:
+    WebhookActor:
+      type: [object, 'null']
+      description: Quién hizo el cambio y por qué vía.
+      required: [id, name, via]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        via: { type: string, enum: [web, api, mcp, ai, system] }
+    WebhookEnvelope:
+      type: object
+      description: Sobre común de todos los eventos. El orden de llegada no está garantizado; ordena por `occurred_at` si lo necesitas.
+      required: [id, event, occurred_at, installation, actor, data]
+      properties:
+        id: { type: string, format: uuid, description: 'Identificador del evento (igual en todos los webhooks que lo reciben y en los reenvíos).' }
+        event: { type: string, enum: [task.created, task.status_changed, task.completed, task.assigned, task.updated, task.moved, task.deleted, ping] }
+        occurred_at: { type: string, format: date-time, description: 'Momento del cambio, UTC con Z.' }
+        installation: { type: string, description: 'Dominio de la instalación.' }
+        actor: { $ref: '#/components/schemas/WebhookActor' }
+    WebhookDeletedTask:
+      type: object
+      description: Tarea que ya no existe (borrada, o borrada entre el cambio y el envío).
+      required: [id, title, project, group, deleted]
+      properties:
+        id: { type: [integer, 'null'] }
+        title: { type: [string, 'null'] }
+        project: { $ref: '#/components/schemas/ActivityReference' }
+        group: { $ref: '#/components/schemas/ActivityReference' }
+        deleted: { type: boolean, const: true }
+    WebhookTaskData:
+      type: object
+      required: [task]
+      properties:
+        task:
+          oneOf:
+            - $ref: '#/components/schemas/TaskDetail'
+            - $ref: '#/components/schemas/WebhookDeletedTask'
+    WebhookTaskEvent:
+      allOf:
+        - $ref: '#/components/schemas/WebhookEnvelope'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/WebhookTaskData' }
+    WebhookTaskStatusEvent:
+      allOf:
+        - $ref: '#/components/schemas/WebhookEnvelope'
+        - type: object
+          properties:
+            data:
+              allOf:
+                - $ref: '#/components/schemas/WebhookTaskData'
+                - type: object
+                  properties:
+                    previous_status: { type: [integer, 'null'] }
+    WebhookTaskAssignedEvent:
+      allOf:
+        - $ref: '#/components/schemas/WebhookEnvelope'
+        - type: object
+          properties:
+            data:
+              allOf:
+                - $ref: '#/components/schemas/WebhookTaskData'
+                - type: object
+                  properties:
+                    assigned_user_ids: { type: array, items: { type: integer } }
+    WebhookChange:
+      type: object
+      required: [old, new]
+      properties:
+        old: {}
+        new: {}
+    WebhookTaskUpdatedEvent:
+      allOf:
+        - $ref: '#/components/schemas/WebhookEnvelope'
+        - type: object
+          properties:
+            data:
+              allOf:
+                - $ref: '#/components/schemas/WebhookTaskData'
+                - type: object
+                  properties:
+                    changes:
+                      type: object
+                      description: 'Solo los campos cambiados. Fechas Y-m-d o null, prioridad entera, etiquetas como lista.'
+                      properties:
+                        title: { $ref: '#/components/schemas/WebhookChange' }
+                        description: { $ref: '#/components/schemas/WebhookChange' }
+                        priority: { $ref: '#/components/schemas/WebhookChange' }
+                        hours_expected: { $ref: '#/components/schemas/WebhookChange' }
+                        hours_inverted: { $ref: '#/components/schemas/WebhookChange' }
+                        date_start: { $ref: '#/components/schemas/WebhookChange' }
+                        date_end: { $ref: '#/components/schemas/WebhookChange' }
+                        tags: { $ref: '#/components/schemas/WebhookChange' }
+    WebhookTaskMovedEvent:
+      allOf:
+        - $ref: '#/components/schemas/WebhookEnvelope'
+        - type: object
+          properties:
+            data:
+              allOf:
+                - $ref: '#/components/schemas/WebhookTaskData'
+                - type: object
+                  properties:
+                    previous_project_id: { type: [integer, 'null'] }
+                    previous_group_id: { type: [integer, 'null'] }
+    WebhookTaskDeletedEvent:
+      allOf:
+        - $ref: '#/components/schemas/WebhookEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [task]
+              properties:
+                task: { $ref: '#/components/schemas/WebhookDeletedTask' }
+    WebhookPingEvent:
+      allOf:
+        - $ref: '#/components/schemas/WebhookEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                message: { type: string }
     AuthenticatedUser:
       type: object
       properties:
@@ -3079,7 +3360,11 @@ components:
         id: { type: integer }
         type:
           type: string
-          description: 'Tipo de evento. Valores actuales: create-task, delete-task, create-group, group-deleted, move-tasks, task-assigned, task-tagging, update-task-status, update-task-title, update-task-description, update-task-priority, update-task-hours, update-task-date-start, update-task-date-end, create-comment, reply-comment, uploaded-file. La lista puede crecer: trata los valores desconocidos como texto.'
+          description: 'Tipo de evento. Valores actuales: create-task, delete-task, create-group, group-deleted, move-tasks, task-assigned, task-tagging, update-task-status, update-task-title, update-task-description, update-task-priority, update-task-hours, update-task-date-start, update-task-date-end, create-comment, reply-comment, uploaded-file. Desde la 1.3.0, además: create-project, update-project-status, update-project, project-member-added y project-member-removed (el miembro va en `affected_user`), update-group-title (`old_title` y `title`), group-archived, group-restored, update-comment (`comment` con el texto nuevo), delete-comment (`comment` recortado a 200 caracteres; el comentario puede no existir ya), delete-file (el fichero en `media`, que puede no existir ya) y task-unassigned (una entrada por usuario quitado, en `affected_user`). Desde la 1.3.0, `task-assigned` con `assignment_set` solo se registra si hay altas o cambia el asignado principal; las bajas van en `task-unassigned`. La lista puede crecer: trata los valores desconocidos como texto.'
+        via:
+          type: string
+          enum: [web, api, mcp, ai, system]
+          description: 'Vía por la que llegó el cambio: `web`, `api` (API v1), `mcp` (conectores IA), `ai` (chat IA de Mopux) o `system` (tareas programadas y procesos internos). Las entradas anteriores a la 1.3.0 figuran como `web`. Desde la 1.3.0.'
         description: { type: [string, 'null'], description: Texto sin HTML. }
         actor: { $ref: '#/components/schemas/ActivityUser' }
         affected_user: { $ref: '#/components/schemas/ActivityUser' }
@@ -3089,7 +3374,7 @@ components:
         comment_id: { type: [integer, 'null'] }
         media: { $ref: '#/components/schemas/ActivityReference' }
         changes:
-          description: Datos saneados del evento. Puede ser un objeto con los campos presentes o un array vacío cuando no hay cambios.
+          description: 'Datos saneados del evento. Puede ser un objeto con los campos presentes o un array vacío cuando no hay cambios. En `create-project`, `title` y `status` son los del proyecto creado (`status` con los valores de proyecto: 0 en curso, 1 hecho, 2 archivado, -1 retrasado). En `update-project-status`, `old_status` y `status` usan esos mismos valores. En `update-project` solo vienen los campos cambiados (`title`, `description`, `date_starts`, `date_ends`), cada uno como `{old, new}`; las fechas en formato Y-m-d.'
           oneOf:
             - type: object
               additionalProperties: false
@@ -3125,6 +3410,14 @@ components:
                 file_count: {}
                 old_priority: {}
                 priority: {}
+                date_starts:
+                  type: object
+                  description: Solo en `update-project`.
+                  properties: { old: { type: [string, 'null'] }, new: { type: [string, 'null'] } }
+                date_ends:
+                  type: object
+                  description: Solo en `update-project`.
+                  properties: { old: { type: [string, 'null'] }, new: { type: [string, 'null'] } }
             - type: array
               maxItems: 0
               items: {}

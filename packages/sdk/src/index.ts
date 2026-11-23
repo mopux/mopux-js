@@ -21,3 +21,4 @@ export type { TouchListOptions } from './resources/touches.js';
 export * from './types.js';
 export { Upload } from './upload.js';
 export { VERSION } from './version.js';
+export * from './webhooks-node.js';

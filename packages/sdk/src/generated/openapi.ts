@@ -1174,9 +1174,255 @@ export interface paths {
         trace?: never;
     };
 }
-export type webhooks = Record<string, never>;
+export interface webhooks {
+    "task.created": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * task.created
+         * @description Tarea creada. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.
+         */
+        post: operations["webhook_taskCreated"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "task.status_changed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * task.status_changed
+         * @description Cambio de estado de una tarea; `data.previous_status` es el estado anterior. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.
+         */
+        post: operations["webhook_taskStatusChanged"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "task.completed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * task.completed
+         * @description Tarea completada (pasa a estado 3). Se envía junto a `task.status_changed`. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.
+         */
+        post: operations["webhook_taskCompleted"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "task.assigned": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * task.assigned
+         * @description Se ha asignado la tarea a una o más personas; `data.assigned_user_ids` son las altas. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.
+         */
+        post: operations["webhook_taskAssigned"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "task.updated": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * task.updated
+         * @description Cambio de título, descripción, prioridad, horas, fechas o etiquetas; `data.changes` lleva cada campo como `{old, new}`. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.
+         */
+        post: operations["webhook_taskUpdated"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "task.moved": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * task.moved
+         * @description Tarea movida a otro grupo o proyecto. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.
+         */
+        post: operations["webhook_taskMoved"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "task.deleted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * task.deleted
+         * @description Tarea eliminada; `data.task` es la versión mínima con `deleted: true`. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.
+         */
+        post: operations["webhook_taskDeleted"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    ping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * ping
+         * @description Envío de prueba desde la página de webhooks. Solo en instalaciones con webhooks en su plan y contrato (planes personalizados). Verifica `X-Mopux-Signature` sobre el cuerpo sin modificar antes de parsearlo.
+         */
+        post: operations["webhook_ping"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+}
 export interface components {
     schemas: {
+        /** @description Quién hizo el cambio y por qué vía. */
+        WebhookActor: {
+            id: number;
+            name: string;
+            /** @enum {string} */
+            via: "web" | "api" | "mcp" | "ai" | "system";
+        } | null;
+        /** @description Sobre común de todos los eventos. El orden de llegada no está garantizado; ordena por `occurred_at` si lo necesitas. */
+        WebhookEnvelope: {
+            /**
+             * Format: uuid
+             * @description Identificador del evento (igual en todos los webhooks que lo reciben y en los reenvíos).
+             */
+            id: string;
+            /** @enum {string} */
+            event: "task.created" | "task.status_changed" | "task.completed" | "task.assigned" | "task.updated" | "task.moved" | "task.deleted" | "ping";
+            /**
+             * Format: date-time
+             * @description Momento del cambio, UTC con Z.
+             */
+            occurred_at: string;
+            /** @description Dominio de la instalación. */
+            installation: string;
+            actor: components["schemas"]["WebhookActor"];
+        };
+        /** @description Tarea que ya no existe (borrada, o borrada entre el cambio y el envío). */
+        WebhookDeletedTask: {
+            id: number | null;
+            title: string | null;
+            project: components["schemas"]["ActivityReference"];
+            group: components["schemas"]["ActivityReference"];
+            /** @constant */
+            deleted: true;
+        };
+        WebhookTaskData: {
+            task: components["schemas"]["TaskDetail"] | components["schemas"]["WebhookDeletedTask"];
+        };
+        WebhookTaskEvent: components["schemas"]["WebhookEnvelope"] & {
+            data?: components["schemas"]["WebhookTaskData"];
+        };
+        WebhookTaskStatusEvent: components["schemas"]["WebhookEnvelope"] & {
+            data?: components["schemas"]["WebhookTaskData"] & {
+                previous_status?: number | null;
+            };
+        };
+        WebhookTaskAssignedEvent: components["schemas"]["WebhookEnvelope"] & {
+            data?: components["schemas"]["WebhookTaskData"] & {
+                assigned_user_ids?: number[];
+            };
+        };
+        WebhookChange: {
+            old: unknown;
+            new: unknown;
+        };
+        WebhookTaskUpdatedEvent: components["schemas"]["WebhookEnvelope"] & {
+            data?: components["schemas"]["WebhookTaskData"] & {
+                /** @description Solo los campos cambiados. Fechas Y-m-d o null, prioridad entera, etiquetas como lista. */
+                changes?: {
+                    title?: components["schemas"]["WebhookChange"];
+                    description?: components["schemas"]["WebhookChange"];
+                    priority?: components["schemas"]["WebhookChange"];
+                    hours_expected?: components["schemas"]["WebhookChange"];
+                    hours_inverted?: components["schemas"]["WebhookChange"];
+                    date_start?: components["schemas"]["WebhookChange"];
+                    date_end?: components["schemas"]["WebhookChange"];
+                    tags?: components["schemas"]["WebhookChange"];
+                };
+            };
+        };
+        WebhookTaskMovedEvent: components["schemas"]["WebhookEnvelope"] & {
+            data?: components["schemas"]["WebhookTaskData"] & {
+                previous_project_id?: number | null;
+                previous_group_id?: number | null;
+            };
+        };
+        WebhookTaskDeletedEvent: components["schemas"]["WebhookEnvelope"] & {
+            data?: {
+                task: components["schemas"]["WebhookDeletedTask"];
+            };
+        };
+        WebhookPingEvent: components["schemas"]["WebhookEnvelope"] & {
+            data?: {
+                message?: string;
+            };
+        };
         AuthenticatedUser: {
             id?: number;
             name?: string;
@@ -1240,8 +1486,13 @@ export interface components {
         } | null;
         ProjectActivity: {
             id?: number;
-            /** @description Tipo de evento. Valores actuales: create-task, delete-task, create-group, group-deleted, move-tasks, task-assigned, task-tagging, update-task-status, update-task-title, update-task-description, update-task-priority, update-task-hours, update-task-date-start, update-task-date-end, create-comment, reply-comment, uploaded-file. La lista puede crecer: trata los valores desconocidos como texto. */
+            /** @description Tipo de evento. Valores actuales: create-task, delete-task, create-group, group-deleted, move-tasks, task-assigned, task-tagging, update-task-status, update-task-title, update-task-description, update-task-priority, update-task-hours, update-task-date-start, update-task-date-end, create-comment, reply-comment, uploaded-file. Desde la 1.3.0, además: create-project, update-project-status, update-project, project-member-added y project-member-removed (el miembro va en `affected_user`), update-group-title (`old_title` y `title`), group-archived, group-restored, update-comment (`comment` con el texto nuevo), delete-comment (`comment` recortado a 200 caracteres; el comentario puede no existir ya), delete-file (el fichero en `media`, que puede no existir ya) y task-unassigned (una entrada por usuario quitado, en `affected_user`). Desde la 1.3.0, `task-assigned` con `assignment_set` solo se registra si hay altas o cambia el asignado principal; las bajas van en `task-unassigned`. La lista puede crecer: trata los valores desconocidos como texto. */
             type?: string;
+            /**
+             * @description Vía por la que llegó el cambio: `web`, `api` (API v1), `mcp` (conectores IA), `ai` (chat IA de Mopux) o `system` (tareas programadas y procesos internos). Las entradas anteriores a la 1.3.0 figuran como `web`. Desde la 1.3.0.
+             * @enum {string}
+             */
+            via?: "web" | "api" | "mcp" | "ai" | "system";
             /** @description Texto sin HTML. */
             description?: string | null;
             actor?: components["schemas"]["ActivityUser"];
@@ -1251,7 +1502,7 @@ export interface components {
             group?: components["schemas"]["ActivityReference"];
             comment_id?: number | null;
             media?: components["schemas"]["ActivityReference"];
-            /** @description Datos saneados del evento. Puede ser un objeto con los campos presentes o un array vacío cuando no hay cambios. */
+            /** @description Datos saneados del evento. Puede ser un objeto con los campos presentes o un array vacío cuando no hay cambios. En `create-project`, `title` y `status` son los del proyecto creado (`status` con los valores de proyecto: 0 en curso, 1 hecho, 2 archivado, -1 retrasado). En `update-project-status`, `old_status` y `status` usan esos mismos valores. En `update-project` solo vienen los campos cambiados (`title`, `description`, `date_starts`, `date_ends`), cada uno como `{old, new}`; las fechas en formato Y-m-d. */
             changes?: {
                 title?: unknown;
                 old_status?: unknown;
@@ -1284,6 +1535,16 @@ export interface components {
                 file_count?: unknown;
                 old_priority?: unknown;
                 priority?: unknown;
+                /** @description Solo en `update-project`. */
+                date_starts?: {
+                    old?: string | null;
+                    new?: string | null;
+                };
+                /** @description Solo en `update-project`. */
+                date_ends?: {
+                    old?: string | null;
+                    new?: string | null;
+                };
             } | unknown[];
             /** @description Formato Y-m-d H:i:s. */
             occurred_at?: string | null;
@@ -1801,6 +2062,12 @@ export interface components {
         };
     };
     parameters: {
+        /** @description Nombre del evento, igual que `event` en el cuerpo. */
+        WebhookEventHeader: string;
+        /** @description Identificador único de la entrega (uuid). Un reintento conserva el mismo; un reenvío manual usa uno nuevo pero conserva el `id` del evento. Úsalo para descartar duplicados. */
+        WebhookDeliveryHeader: string;
+        /** @description t={unix},v1={hex}. v1 = HMAC-SHA256 con el secreto del webhook sobre "{t}.{cuerpo sin modificar}". Compara en tiempo constante y rechaza timestamps de más de 5 minutos. */
+        WebhookSignatureHeader: string;
         taskId: number;
         projectId: number;
         taskGroupId: number;
@@ -4260,6 +4527,238 @@ export interface operations {
             403: components["responses"]["Error403"];
             404: components["responses"]["Error404"];
             429: components["responses"]["Error429"];
+        };
+    };
+    webhook_taskCreated: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Nombre del evento, igual que `event` en el cuerpo. */
+                "X-Mopux-Event": components["parameters"]["WebhookEventHeader"];
+                /** @description Identificador único de la entrega (uuid). Un reintento conserva el mismo; un reenvío manual usa uno nuevo pero conserva el `id` del evento. Úsalo para descartar duplicados. */
+                "X-Mopux-Delivery": components["parameters"]["WebhookDeliveryHeader"];
+                /** @description t={unix},v1={hex}. v1 = HMAC-SHA256 con el secreto del webhook sobre "{t}.{cuerpo sin modificar}". Compara en tiempo constante y rechaza timestamps de más de 5 minutos. */
+                "X-Mopux-Signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookTaskEvent"];
+            };
+        };
+        responses: {
+            /** @description Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook. */
+            "2XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    webhook_taskStatusChanged: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Nombre del evento, igual que `event` en el cuerpo. */
+                "X-Mopux-Event": components["parameters"]["WebhookEventHeader"];
+                /** @description Identificador único de la entrega (uuid). Un reintento conserva el mismo; un reenvío manual usa uno nuevo pero conserva el `id` del evento. Úsalo para descartar duplicados. */
+                "X-Mopux-Delivery": components["parameters"]["WebhookDeliveryHeader"];
+                /** @description t={unix},v1={hex}. v1 = HMAC-SHA256 con el secreto del webhook sobre "{t}.{cuerpo sin modificar}". Compara en tiempo constante y rechaza timestamps de más de 5 minutos. */
+                "X-Mopux-Signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookTaskStatusEvent"];
+            };
+        };
+        responses: {
+            /** @description Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook. */
+            "2XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    webhook_taskCompleted: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Nombre del evento, igual que `event` en el cuerpo. */
+                "X-Mopux-Event": components["parameters"]["WebhookEventHeader"];
+                /** @description Identificador único de la entrega (uuid). Un reintento conserva el mismo; un reenvío manual usa uno nuevo pero conserva el `id` del evento. Úsalo para descartar duplicados. */
+                "X-Mopux-Delivery": components["parameters"]["WebhookDeliveryHeader"];
+                /** @description t={unix},v1={hex}. v1 = HMAC-SHA256 con el secreto del webhook sobre "{t}.{cuerpo sin modificar}". Compara en tiempo constante y rechaza timestamps de más de 5 minutos. */
+                "X-Mopux-Signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookTaskStatusEvent"];
+            };
+        };
+        responses: {
+            /** @description Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook. */
+            "2XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    webhook_taskAssigned: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Nombre del evento, igual que `event` en el cuerpo. */
+                "X-Mopux-Event": components["parameters"]["WebhookEventHeader"];
+                /** @description Identificador único de la entrega (uuid). Un reintento conserva el mismo; un reenvío manual usa uno nuevo pero conserva el `id` del evento. Úsalo para descartar duplicados. */
+                "X-Mopux-Delivery": components["parameters"]["WebhookDeliveryHeader"];
+                /** @description t={unix},v1={hex}. v1 = HMAC-SHA256 con el secreto del webhook sobre "{t}.{cuerpo sin modificar}". Compara en tiempo constante y rechaza timestamps de más de 5 minutos. */
+                "X-Mopux-Signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookTaskAssignedEvent"];
+            };
+        };
+        responses: {
+            /** @description Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook. */
+            "2XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    webhook_taskUpdated: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Nombre del evento, igual que `event` en el cuerpo. */
+                "X-Mopux-Event": components["parameters"]["WebhookEventHeader"];
+                /** @description Identificador único de la entrega (uuid). Un reintento conserva el mismo; un reenvío manual usa uno nuevo pero conserva el `id` del evento. Úsalo para descartar duplicados. */
+                "X-Mopux-Delivery": components["parameters"]["WebhookDeliveryHeader"];
+                /** @description t={unix},v1={hex}. v1 = HMAC-SHA256 con el secreto del webhook sobre "{t}.{cuerpo sin modificar}". Compara en tiempo constante y rechaza timestamps de más de 5 minutos. */
+                "X-Mopux-Signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookTaskUpdatedEvent"];
+            };
+        };
+        responses: {
+            /** @description Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook. */
+            "2XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    webhook_taskMoved: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Nombre del evento, igual que `event` en el cuerpo. */
+                "X-Mopux-Event": components["parameters"]["WebhookEventHeader"];
+                /** @description Identificador único de la entrega (uuid). Un reintento conserva el mismo; un reenvío manual usa uno nuevo pero conserva el `id` del evento. Úsalo para descartar duplicados. */
+                "X-Mopux-Delivery": components["parameters"]["WebhookDeliveryHeader"];
+                /** @description t={unix},v1={hex}. v1 = HMAC-SHA256 con el secreto del webhook sobre "{t}.{cuerpo sin modificar}". Compara en tiempo constante y rechaza timestamps de más de 5 minutos. */
+                "X-Mopux-Signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookTaskMovedEvent"];
+            };
+        };
+        responses: {
+            /** @description Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook. */
+            "2XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    webhook_taskDeleted: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Nombre del evento, igual que `event` en el cuerpo. */
+                "X-Mopux-Event": components["parameters"]["WebhookEventHeader"];
+                /** @description Identificador único de la entrega (uuid). Un reintento conserva el mismo; un reenvío manual usa uno nuevo pero conserva el `id` del evento. Úsalo para descartar duplicados. */
+                "X-Mopux-Delivery": components["parameters"]["WebhookDeliveryHeader"];
+                /** @description t={unix},v1={hex}. v1 = HMAC-SHA256 con el secreto del webhook sobre "{t}.{cuerpo sin modificar}". Compara en tiempo constante y rechaza timestamps de más de 5 minutos. */
+                "X-Mopux-Signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookTaskDeletedEvent"];
+            };
+        };
+        responses: {
+            /** @description Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook. */
+            "2XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    webhook_ping: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Nombre del evento, igual que `event` en el cuerpo. */
+                "X-Mopux-Event": components["parameters"]["WebhookEventHeader"];
+                /** @description Identificador único de la entrega (uuid). Un reintento conserva el mismo; un reenvío manual usa uno nuevo pero conserva el `id` del evento. Úsalo para descartar duplicados. */
+                "X-Mopux-Delivery": components["parameters"]["WebhookDeliveryHeader"];
+                /** @description t={unix},v1={hex}. v1 = HMAC-SHA256 con el secreto del webhook sobre "{t}.{cuerpo sin modificar}". Compara en tiempo constante y rechaza timestamps de más de 5 minutos. */
+                "X-Mopux-Signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookPingEvent"];
+            };
+        };
+        responses: {
+            /** @description Recibido. Responde en menos de 10 s; cualquier otro resultado se reintenta (1 min, 5 min, 30 min, 2 h, 6 h y 12 h). Un 410 desactiva el webhook. */
+            "2XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
 }
