@@ -55,12 +55,14 @@ jobs:
         run: |
           npm install --no-save bun@1.4.5
           BUN="$PWD/node_modules/.bin/bun" npm run compile --workspace @mopux/cli
-      - name: Publish with trusted publishing (staged until a maintainer approves it on npm)
+      # The npm trusted publisher only allows staging: the version waits in
+      # "Staged packages" on npmjs.com until a maintainer approves it with 2FA.
+      - name: Stage on npm with trusted publishing (a maintainer approves it on npmjs.com)
         run: |
           if npm view "${{ needs.prepare.outputs.package }}@${{ needs.prepare.outputs.version }}" version >/dev/null 2>&1; then
-            echo "${{ needs.prepare.outputs.package }}@${{ needs.prepare.outputs.version }} is already on npm: skipping publish."
+            echo "${{ needs.prepare.outputs.package }}@${{ needs.prepare.outputs.version }} is already on npm: skipping."
           else
-            npm publish --workspace "${{ needs.prepare.outputs.package }}" --access public --provenance
+            npm stage publish --workspace "${{ needs.prepare.outputs.package }}" --access public --provenance
           fi
       - name: GitHub release
         env:
@@ -72,4 +74,4 @@ jobs:
           fi
           gh release create "${GITHUB_REF_NAME}" "${files[@]}" \
             --title "${{ needs.prepare.outputs.package }} ${{ needs.prepare.outputs.version }}" \
-            --notes "See ${{ needs.prepare.outputs.dir }}/CHANGELOG.md. The npm version is staged until it is approved on npmjs.com."
+            --notes "See ${{ needs.prepare.outputs.dir }}/CHANGELOG.md. The npm version is available once a maintainer approves it in Staged packages on npmjs.com."
