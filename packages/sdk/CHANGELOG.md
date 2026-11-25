@@ -4,6 +4,10 @@ All notable changes to `@mopux/sdk` are documented here. The project follows [Se
 
 ## Unreleased
 
+## 0.2.0 - 2026-11-25
+
+Targets Mopux API 1.3.0 (Mopux 1.14.0).
+
 - Added Web Crypto signature verification and typed parsing for incoming Mopux webhooks.
 - Synced OpenAPI 1.3.0, including webhook payloads and project activity updates.
 

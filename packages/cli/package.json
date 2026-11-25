@@ -38,7 +38,7 @@
     "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
-    "@mopux/sdk": "^0.1.0"
+    "@mopux/sdk": "^0.2.0"
   },
   "devDependencies": {
     "tsup": "9.0.0",
